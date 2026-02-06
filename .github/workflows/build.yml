@@ -20,33 +20,20 @@ jobs:
         with:
           toolchain: 1.85.0
 
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
       - name: Install Solana CLI (v2.3)
         run: |
           sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.0/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Verify installations
+      - name: Clear platform-tools cache and force fresh download
         run: |
+          rm -rf ~/.cache/solana
           solana --version
-          rustc --version
-          cargo --version
 
-      - name: Build program
+      - name: Build program with fresh tools
         run: |
           rm -f Cargo.lock
-          cargo build-sbf --tools-version 1.53
+          cargo build-sbf --force-tools-install
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
