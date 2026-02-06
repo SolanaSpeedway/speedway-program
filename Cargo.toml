@@ -43,13 +43,19 @@ thiserror = "1.0.57"
 tokio = { version = "1.37.0", features = ["full"] }
 openssl = { version = "0.10", features = ["vendored"] }
 
-# Pin dependencies that use edition2024 to older versions
+# Pin ALL edition2024 crates to pre-2024 versions
 time = "=0.3.36"
 time-core = "=0.1.2"
 time-macros = "=0.2.18"
 az = "=1.2.1"
 base64ct = "=1.6.0"
 constant_time_eq = "=0.3.1"
+wit-bindgen = "=0.36.0"
+wit-bindgen-rt = "=0.36.0"
+wit-bindgen-core = "=0.36.0"
+wit-parser = "=0.224.0"
+wasm-encoder = "=0.224.0"
+wasmparser = "=0.224.0"
 
 [profile.release]
 overflow-checks = true
