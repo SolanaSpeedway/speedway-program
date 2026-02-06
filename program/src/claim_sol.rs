@@ -1,4 +1,4 @@
-use ore_api::prelude::*;
+use speedway_api::prelude::*;
 use solana_program::{log::sol_log, native_token::lamports_to_sol};
 use steel::*;
 
@@ -11,7 +11,7 @@ pub fn process_claim_sol(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramR
     };
     signer_info.is_signer()?;
     let miner = miner_info
-        .as_account_mut::<Miner>(&ore_api::ID)?
+        .as_account_mut::<Miner>(&speedway_api::ID)?
         .assert_mut(|m| m.authority == *signer_info.key)?;
     system_program.is_program(&system_program::ID)?;
 

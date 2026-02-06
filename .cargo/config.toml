@@ -1,0 +1,4 @@
+[env]
+# Use Strawberry Perl for OpenSSL build
+PERL = "C:/Strawberry/perl/bin/perl.exe"
+OPENSSL_NO_VENDOR = "0"

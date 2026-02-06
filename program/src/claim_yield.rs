@@ -1,4 +1,12 @@
-use ore_api::prelude::*;
+// =============================================================================
+// DEPRECATED: ORE Staking Claim Yield
+// =============================================================================
+// This module is part of ORE's staking system which is being replaced by the
+// Garage faucet system in Solana Speedway. Keeping for reference only.
+// =============================================================================
+
+/*
+use speedway_api::prelude::*;
 use solana_program::log::sol_log;
 use spl_token::amount_to_ui_amount;
 use steel::*;
@@ -20,9 +28,9 @@ pub fn process_claim_yield(accounts: &[AccountInfo<'_>], data: &[u8]) -> Program
     mint_info.has_address(&MINT_ADDRESS)?.as_mint()?;
     recipient_info.is_writable()?;
     let stake = stake_info
-        .as_account_mut::<Stake>(&ore_api::ID)?
+        .as_account_mut::<Stake>(&speedway_api::ID)?
         .assert_mut(|s| s.authority == *signer_info.key)?;
-    let treasury = treasury_info.as_account_mut::<Treasury>(&ore_api::ID)?;
+    let treasury = treasury_info.as_account_mut::<Treasury>(&speedway_api::ID)?;
     treasury_tokens_info
         .is_writable()?
         .as_associated_token_account(&treasury_info.key, &mint_info.key)?;
@@ -69,3 +77,4 @@ pub fn process_claim_yield(accounts: &[AccountInfo<'_>], data: &[u8]) -> Program
 
     Ok(())
 }
+*/

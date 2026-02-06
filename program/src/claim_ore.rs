@@ -1,4 +1,4 @@
-use ore_api::prelude::*;
+use speedway_api::prelude::*;
 use solana_program::log::sol_log;
 use spl_token::amount_to_ui_amount;
 use steel::*;
@@ -14,11 +14,11 @@ pub fn process_claim_ore(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramR
     };
     signer_info.is_signer()?;
     let miner = miner_info
-        .as_account_mut::<Miner>(&ore_api::ID)?
+        .as_account_mut::<Miner>(&speedway_api::ID)?
         .assert_mut(|m| m.authority == *signer_info.key)?;
     mint_info.has_address(&MINT_ADDRESS)?.as_mint()?;
     recipient_info.is_writable()?;
-    let treasury = treasury_info.as_account_mut::<Treasury>(&ore_api::ID)?;
+    let treasury = treasury_info.as_account_mut::<Treasury>(&speedway_api::ID)?;
     treasury_tokens_info.as_associated_token_account(&treasury_info.key, &mint_info.key)?;
     system_program.is_program(&system_program::ID)?;
     token_program.is_program(&spl_token::ID)?;

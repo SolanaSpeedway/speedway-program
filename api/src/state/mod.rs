@@ -1,17 +1,20 @@
 mod automation;
 mod board;
 mod config;
+mod garage;
 mod miner;
 mod round;
-mod stake;
+// DEPRECATED: ORE Staking state (replaced by Garage system)
+// mod stake;
 mod treasury;
 
 pub use automation::*;
 pub use board::*;
 pub use config::*;
+pub use garage::*;
 pub use miner::*;
 pub use round::*;
-pub use stake::*;
+// pub use stake::*;
 pub use treasury::*;
 
 use crate::consts::*;
@@ -26,8 +29,10 @@ pub enum OreAccount {
     Miner = 103,
     Treasury = 104,
     Board = 105,
-    Stake = 108,
+    // DEPRECATED: ORE Staking (replaced by Garage system)
+    // Stake = 108,
     Round = 109,
+    Garage = 110,
 }
 
 pub fn automation_pda(authority: Pubkey) -> (Pubkey, u8) {
@@ -50,8 +55,13 @@ pub fn round_pda(id: u64) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[ROUND, &id.to_le_bytes()], &crate::ID)
 }
 
-pub fn stake_pda(authority: Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[STAKE, &authority.to_bytes()], &crate::ID)
+// DEPRECATED: ORE Staking PDA (replaced by Garage system)
+// pub fn stake_pda(authority: Pubkey) -> (Pubkey, u8) {
+//     Pubkey::find_program_address(&[STAKE, &authority.to_bytes()], &crate::ID)
+// }
+
+pub fn garage_pda(authority: Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[GARAGE, &authority.to_bytes()], &crate::ID)
 }
 
 pub fn treasury_pda() -> (Pubkey, u8) {

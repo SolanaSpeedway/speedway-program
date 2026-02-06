@@ -1,4 +1,12 @@
-use ore_api::prelude::*;
+// =============================================================================
+// DEPRECATED: ORE Staking Deposit
+// =============================================================================
+// This module is part of ORE's staking system which is being replaced by the
+// Garage faucet system in Solana Speedway. Keeping for reference only.
+// =============================================================================
+
+/*
+use speedway_api::prelude::*;
 use solana_program::log::sol_log;
 use spl_token::amount_to_ui_amount;
 use steel::*;
@@ -24,7 +32,7 @@ pub fn process_deposit(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResu
         .is_writable()?
         .as_associated_token_account(&signer_info.key, &MINT_ADDRESS)?;
     stake_info.is_writable()?;
-    let treasury = treasury_info.as_account_mut::<Treasury>(&ore_api::ID)?;
+    let treasury = treasury_info.as_account_mut::<Treasury>(&speedway_api::ID)?;
     system_program.is_program(&system_program::ID)?;
     token_program.is_program(&spl_token::ID)?;
     associated_token_program.is_program(&spl_associated_token_account::ID)?;
@@ -35,10 +43,10 @@ pub fn process_deposit(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResu
             stake_info,
             system_program,
             &payer_info,
-            &ore_api::ID,
+            &speedway_api::ID,
             &[STAKE, &signer_info.key.to_bytes()],
         )?;
-        let stake = stake_info.as_account_mut::<Stake>(&ore_api::ID)?;
+        let stake = stake_info.as_account_mut::<Stake>(&speedway_api::ID)?;
         stake.authority = *signer_info.key;
         stake.balance = 0;
         stake.buffer_a = 0;
@@ -56,7 +64,7 @@ pub fn process_deposit(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResu
         stake
     } else {
         stake_info
-            .as_account_mut::<Stake>(&ore_api::ID)?
+            .as_account_mut::<Stake>(&speedway_api::ID)?
             .assert_mut(|s| s.authority == *signer_info.key)?
     };
 
@@ -110,3 +118,4 @@ pub fn process_deposit(accounts: &[AccountInfo<'_>], data: &[u8]) -> ProgramResu
 
     Ok(())
 }
+*/

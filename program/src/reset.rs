@@ -1,5 +1,5 @@
 use entropy_api::state::Var;
-use ore_api::prelude::*;
+use speedway_api::prelude::*;
 use solana_program::{keccak, log::sol_log};
 use steel::*;
 
@@ -19,24 +19,24 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
     };
     signer_info.is_signer()?;
     let board = board_info
-        .as_account_mut::<Board>(&ore_api::ID)?
+        .as_account_mut::<Board>(&speedway_api::ID)?
         .assert_mut(|b| clock.slot >= b.end_slot + INTERMISSION_SLOTS)?;
     fee_collector_info
         .is_writable()?
         .has_address(&ADMIN_FEE_COLLECTOR)?;
     let round = round_info
-        .as_account_mut::<Round>(&ore_api::ID)?
+        .as_account_mut::<Round>(&speedway_api::ID)?
         .assert_mut(|r| r.id == board.round_id)?;
     round_next_info
         .is_empty()?
         .is_writable()?
-        .has_seeds(&[ROUND, &(board.round_id + 1).to_le_bytes()], &ore_api::ID)?;
+        .has_seeds(&[ROUND, &(board.round_id + 1).to_le_bytes()], &speedway_api::ID)?;
     let mint = mint_info.has_address(&MINT_ADDRESS)?.as_mint()?;
-    let treasury = treasury_info.as_account_mut::<Treasury>(&ore_api::ID)?;
+    let treasury = treasury_info.as_account_mut::<Treasury>(&speedway_api::ID)?;
     treasury_tokens_info.as_associated_token_account(&treasury_info.key, &mint_info.key)?;
     system_program.is_program(&system_program::ID)?;
     token_program.is_program(&spl_token::ID)?;
-    ore_program.is_program(&ore_api::ID)?;
+    ore_program.is_program(&speedway_api::ID)?;
     slot_hashes_sysvar.is_sysvar(&sysvar::slot_hashes::ID)?;
 
     // Open next round account.
@@ -44,10 +44,10 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
         round_next_info,
         ore_program,
         signer_info,
-        &ore_api::ID,
+        &speedway_api::ID,
         &[ROUND, &(board.round_id + 1).to_le_bytes()],
     )?;
-    let round_next = round_next_info.as_account_mut::<Round>(&ore_api::ID)?;
+    let round_next = round_next_info.as_account_mut::<Round>(&speedway_api::ID)?;
     round_next.id = board.round_id + 1;
     round_next.deployed = [0; 25];
     round_next.slot_hash = [0; 32];
@@ -125,17 +125,36 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
         return Ok(());
     };
 
-    // Caculate admin fees.
-    let total_admin_fee = round.total_deployed / 100;
+    // Calculate Sprint protocol fees (10% total = 1% team + 9% buyback).
+    let team_fee = round
+        .total_deployed
+        .checked_mul(SPRINT_TEAM_FEE_BPS)
+        .and_then(|v| v.checked_div(DENOMINATOR_BPS))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let buyback_fee = round
+        .total_deployed
+        .checked_mul(SPRINT_BUYBACK_FEE_BPS)
+        .and_then(|v| v.checked_div(DENOMINATOR_BPS))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let total_protocol_fee = team_fee
+        .checked_add(buyback_fee)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
     // Get the winning square.
     let winning_square = round.winning_square(r);
 
     // If no one deployed on the winning square, vault all deployed.
     if round.deployed[winning_square] == 0 {
-        // Vault all deployed.
-        round.total_vaulted = round.total_deployed - total_admin_fee;
-        treasury.balance += round.total_deployed - total_admin_fee;
+        // Vault all deployed (minus protocol fees).
+        let vault_amount_no_winner = round
+            .total_deployed
+            .checked_sub(total_protocol_fee)
+            .ok_or(ProgramError::ArithmeticOverflow)?;
+        round.total_vaulted = vault_amount_no_winner;
+        treasury.balance = treasury
+            .balance
+            .checked_add(vault_amount_no_winner)
+            .ok_or(ProgramError::ArithmeticOverflow)?;
 
         // Emit event.
         program_log(
@@ -165,38 +184,59 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
         board.start_slot = clock.slot + 1;
         board.end_slot = u64::MAX;
 
-        // Do SOL transfers.
-        round_info.send(total_admin_fee, &fee_collector_info);
-        round_info.send(round.total_deployed - total_admin_fee, &treasury_info);
+        // Do SOL transfers: 1% team fee, 9% buyback to treasury, rest vaulted to treasury.
+        round_info.send(team_fee, &fee_collector_info);
+        round_info.send(
+            buyback_fee
+                .checked_add(vault_amount_no_winner)
+                .ok_or(ProgramError::ArithmeticOverflow)?,
+            &treasury_info,
+        );
         return Ok(());
     }
 
-    // Get winnings amount (total deployed on all non-winning squares, minus admin fee).
-    let winnings = round.calculate_total_winnings(winning_square);
-    let winnings_admin_fee = winnings / 100; // 1% admin fee.
-    let winnings = winnings - winnings_admin_fee;
+    // Get winnings amount (total deployed on all non-winning squares).
+    let raw_winnings = round.calculate_total_winnings(winning_square);
 
-    // Subtract vault amount from winnings.
-    let vault_amount = winnings / 10; // 10% of winnings.
-    let winnings = winnings - vault_amount;
+    // Calculate protocol fees on winnings: 1% team + 9% buyback = 10% total.
+    let winnings_team_fee = raw_winnings
+        .checked_mul(SPRINT_TEAM_FEE_BPS)
+        .and_then(|v| v.checked_div(DENOMINATOR_BPS))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let winnings_buyback_fee = raw_winnings
+        .checked_mul(SPRINT_BUYBACK_FEE_BPS)
+        .and_then(|v| v.checked_div(DENOMINATOR_BPS))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    // Winnings after protocol fee.
+    let winnings = raw_winnings
+        .checked_sub(winnings_team_fee)
+        .and_then(|v| v.checked_sub(winnings_buyback_fee))
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    // Buyback fee goes to treasury for later buyback execution.
     round.total_winnings = winnings;
-    round.total_vaulted = vault_amount;
-    treasury.balance += vault_amount;
+    round.total_vaulted = winnings_buyback_fee;
+    treasury.balance = treasury
+        .balance
+        .checked_add(winnings_buyback_fee)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
 
-    // Sanity check.
+    // Sanity check: total deployed >= vaulted + winnings + winners' stake + team fee.
     assert!(
         round.total_deployed
             >= round.total_vaulted
-                + round.total_winnings
-                + round.deployed[winning_square]
-                + winnings_admin_fee
+                .checked_add(round.total_winnings)
+                .and_then(|v| v.checked_add(round.deployed[winning_square]))
+                .and_then(|v| v.checked_add(winnings_team_fee))
+                .unwrap_or(u64::MAX)
     );
 
     // Calculate mint amounts.
     let mut mint_supply = mint.supply();
-    let mint_amount = MAX_SUPPLY.saturating_sub(mint_supply).min(ONE_ORE);
+    let mint_amount = MAX_SUPPLY.saturating_sub(mint_supply).min(ONE_FUEL);
     mint_supply += mint_amount;
-    let motherlode_mint_amount = MAX_SUPPLY.saturating_sub(mint_supply).min(ONE_ORE / 5);
+    let motherlode_mint_amount = MAX_SUPPLY.saturating_sub(mint_supply).min(ONE_FUEL / 5);
     let total_mint_amount = mint_amount + motherlode_mint_amount;
 
     // Reward +1 ORE for the winning miner(s).
@@ -231,13 +271,13 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
             treasury_tokens_info.clone(),
             token_program.clone(),
         ],
-        &ore_api::ID,
+        &speedway_api::ID,
         &[TREASURY],
     )?;
 
     // Validate top miner (dry-run - no errors on failure).
     if round.top_miner != SPLIT_ADDRESS {
-        if let Ok(miner) = top_miner_info.as_account::<Miner>(&ore_api::ID) {
+        if let Ok(miner) = top_miner_info.as_account::<Miner>(&speedway_api::ID) {
             if miner.round_id == round.id {
                 let top_miner_sample = round.top_miner_sample(r, winning_square);
                 if top_miner_sample >= miner.cumulative[winning_square]
@@ -286,9 +326,9 @@ pub fn process_reset(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResul
     board.start_slot = clock.slot + 1;
     board.end_slot = u64::MAX; // board.start_slot + 150;
 
-    // Do SOL transfers.
-    round_info.send(total_admin_fee, &fee_collector_info);
-    round_info.send(vault_amount, &treasury_info);
+    // Do SOL transfers: 1% team fee, 9% buyback to treasury.
+    round_info.send(winnings_team_fee, &fee_collector_info);
+    round_info.send(winnings_buyback_fee, &treasury_info);
 
     Ok(())
 }

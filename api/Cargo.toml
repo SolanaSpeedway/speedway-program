@@ -1,5 +1,5 @@
 [package]
-name = "ore-api"
+name = "speedway-api"
 description.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -22,3 +22,4 @@ spl-token-2022.workspace = true
 spl-associated-token-account.workspace = true
 steel.workspace = true
 thiserror.workspace = true
+openssl.workspace = true

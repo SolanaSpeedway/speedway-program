@@ -14,11 +14,18 @@ pub enum OreInstruction {
     Reset = 9,
     ReloadSOL = 21,
 
-    // Staker
-    Deposit = 10,
-    Withdraw = 11,
-    ClaimYield = 12,
-    CompoundYield = 22,
+    // DEPRECATED: ORE Staker instructions (replaced by Garage system)
+    // Deposit = 10,
+    // Withdraw = 11,
+    // ClaimYield = 12,
+    // CompoundYield = 22,
+
+    // Garage
+    FuelUp = 30,
+    Boost = 31,
+    Collect = 32,
+    Stash = 33,
+    ClaimWallet = 34,
 
     // Admin
     Buyback = 13,
@@ -122,24 +129,25 @@ pub struct Bury {
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct ReloadSOL {}
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct Deposit {
-    pub amount: [u8; 8],
-    pub compound_fee: [u8; 8],
-}
+// DEPRECATED: ORE Staking instruction structs (replaced by Garage system)
+// #[repr(C)]
+// #[derive(Clone, Copy, Debug, Pod, Zeroable)]
+// pub struct Deposit {
+//     pub amount: [u8; 8],
+//     pub compound_fee: [u8; 8],
+// }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct Withdraw {
-    pub amount: [u8; 8],
-}
+// #[repr(C)]
+// #[derive(Clone, Copy, Debug, Pod, Zeroable)]
+// pub struct Withdraw {
+//     pub amount: [u8; 8],
+// }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct ClaimYield {
-    pub amount: [u8; 8],
-}
+// #[repr(C)]
+// #[derive(Clone, Copy, Debug, Pod, Zeroable)]
+// pub struct ClaimYield {
+//     pub amount: [u8; 8],
+// }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
@@ -175,9 +183,47 @@ pub struct SetVarAddress {}
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct Liq {}
 
+// DEPRECATED: ORE Staking (replaced by Garage system)
+// #[repr(C)]
+// #[derive(Clone, Copy, Debug, Pod, Zeroable)]
+// pub struct CompoundYield {}
+
+// ============================================================================
+// Garage Instructions
+// ============================================================================
+
+/// FuelUp: Deposit FUEL tokens into Garage.
+/// Burns tokens and credits to user's Garage position.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
-pub struct CompoundYield {}
+pub struct FuelUp {
+    /// Amount of FUEL to deposit (in drops).
+    pub amount: [u8; 8],
+}
+
+/// Boost: Compound accrued rewards back into Garage.
+/// Adds rewards to total_deposited, increasing max_payout.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Boost {}
+
+/// Collect: Withdraw accrued rewards from Garage.
+/// Subject to 10% collect tax.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Collect {}
+
+/// Stash: Send Sprint FUEL rewards directly to Garage.
+/// 0% fee - frictionless path from Sprint rewards to Garage.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Stash {}
+
+/// ClaimWallet: Claim Sprint FUEL rewards directly to wallet.
+/// 20% haircut: 75% burned (15% total), 25% to team (5% total).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct ClaimWallet {}
 
 instruction!(OreInstruction, Automate);
 instruction!(OreInstruction, Close);
@@ -192,9 +238,17 @@ instruction!(OreInstruction, Buyback);
 instruction!(OreInstruction, Bury);
 instruction!(OreInstruction, Reset);
 instruction!(OreInstruction, SetAdmin);
-instruction!(OreInstruction, Deposit);
-instruction!(OreInstruction, Withdraw);
-instruction!(OreInstruction, ClaimYield);
+// DEPRECATED: ORE Staking (replaced by Garage system)
+// instruction!(OreInstruction, Deposit);
+// instruction!(OreInstruction, Withdraw);
+// instruction!(OreInstruction, ClaimYield);
 instruction!(OreInstruction, NewVar);
 instruction!(OreInstruction, Liq);
-instruction!(OreInstruction, CompoundYield);
+// instruction!(OreInstruction, CompoundYield);
+
+// Garage instructions
+instruction!(OreInstruction, FuelUp);
+instruction!(OreInstruction, Boost);
+instruction!(OreInstruction, Collect);
+instruction!(OreInstruction, Stash);
+instruction!(OreInstruction, ClaimWallet);

@@ -1,3 +1,12 @@
+/*
+ * DEPRECATED: ORE Staking State
+ * This file has been commented out as part of the migration from ORE's staking
+ * to Speedway's Garage system.
+ *
+ * Original functionality: Track staking positions, balances, and rewards.
+ */
+
+/*
 use serde::{Deserialize, Serialize};
 use steel::*;
 
@@ -106,3 +115,4 @@ impl Stake {
 }
 
 account!(OreAccount, Stake);
+*/

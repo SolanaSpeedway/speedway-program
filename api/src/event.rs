@@ -6,6 +6,12 @@ pub enum OreEvent {
     Bury = 1,
     Deploy = 2,
     Liq = 3,
+    // Garage events
+    FuelUp = 10,
+    Boost = 11,
+    Collect = 12,
+    Stash = 13,
+    ClaimWallet = 14,
 }
 
 #[repr(C)]
@@ -130,3 +136,167 @@ event!(ResetEvent);
 event!(BuryEvent);
 event!(DeployEvent);
 event!(LiqEvent);
+
+// ============================================================================
+// Garage Events
+// ============================================================================
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
+pub struct FuelUpEvent {
+    /// The event discriminator.
+    pub disc: u64,
+
+    /// The authority (user) who deposited.
+    pub authority: Pubkey,
+
+    /// The gross deposit amount (before tax).
+    pub gross_amount: u64,
+
+    /// The net amount credited to Garage (after 10% tax).
+    pub net_amount: u64,
+
+    /// The team fee (2% of gross).
+    pub team_fee: u64,
+
+    /// The referral fee (5% of gross).
+    pub ref_fee: u64,
+
+    /// The pool fee (3% of gross).
+    pub pool_fee: u64,
+
+    /// The referrer who received the referral fee.
+    pub referrer: Pubkey,
+
+    /// The new total_deposited in user's Garage.
+    pub new_total_deposited: u64,
+
+    /// The new max_payout in user's Garage.
+    pub new_max_payout: u64,
+
+    /// The timestamp of the event.
+    pub ts: i64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
+pub struct BoostEvent {
+    /// The event discriminator.
+    pub disc: u64,
+
+    /// The authority (user) who boosted.
+    pub authority: Pubkey,
+
+    /// The gross rewards compounded (before 5% tax).
+    pub gross_amount: u64,
+
+    /// The net amount added to deposits (after tax).
+    pub net_amount: u64,
+
+    /// The boost tax (5% of gross).
+    pub tax: u64,
+
+    /// The new total_deposited in user's Garage.
+    pub new_total_deposited: u64,
+
+    /// The new max_payout in user's Garage.
+    pub new_max_payout: u64,
+
+    /// The timestamp of the event.
+    pub ts: i64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
+pub struct CollectEvent {
+    /// The event discriminator.
+    pub disc: u64,
+
+    /// The authority (user) who collected.
+    pub authority: Pubkey,
+
+    /// The gross rewards withdrawn (before taxes).
+    pub gross_amount: u64,
+
+    /// The net amount received (after all taxes).
+    pub net_amount: u64,
+
+    /// The base collect tax (10% of gross).
+    pub base_tax: u64,
+
+    /// The whale tax (0-50% based on TVL %).
+    pub whale_tax: u64,
+
+    /// Whale tax portion sent to team (10% of whale_tax).
+    pub whale_tax_team: u64,
+
+    /// Whale tax portion sent to pool (90% of whale_tax).
+    pub whale_tax_pool: u64,
+
+    /// The new total_claimed in user's Garage.
+    pub new_total_claimed: u64,
+
+    /// Whether the Garage is now exhausted.
+    pub is_exhausted: u8,
+
+    /// Padding for alignment.
+    pub _padding: [u8; 7],
+
+    /// The timestamp of the event.
+    pub ts: i64,
+}
+
+event!(FuelUpEvent);
+event!(BoostEvent);
+event!(CollectEvent);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
+pub struct StashEvent {
+    /// The event discriminator.
+    pub disc: u64,
+
+    /// The authority (user) who stashed.
+    pub authority: Pubkey,
+
+    /// The amount of FUEL stashed from Sprint rewards.
+    pub amount: u64,
+
+    /// The new total_deposited in user's Garage.
+    pub new_total_deposited: u64,
+
+    /// The new max_payout in user's Garage.
+    pub new_max_payout: u64,
+
+    /// The timestamp of the event.
+    pub ts: i64,
+}
+
+event!(StashEvent);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable, Serialize, Deserialize)]
+pub struct ClaimWalletEvent {
+    /// The event discriminator.
+    pub disc: u64,
+
+    /// The authority (user) who claimed.
+    pub authority: Pubkey,
+
+    /// The gross amount before haircut.
+    pub gross_amount: u64,
+
+    /// The net amount received (80% of gross).
+    pub net_amount: u64,
+
+    /// The amount burned (15% of gross).
+    pub burn_amount: u64,
+
+    /// The team fee (5% of gross).
+    pub team_fee: u64,
+
+    /// The timestamp of the event.
+    pub ts: i64,
+}
+
+event!(ClaimWalletEvent);
