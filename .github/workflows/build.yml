@@ -10,33 +10,52 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ellipsislabs/solana:latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check toolchain versions
+      - name: Install Rust nightly with rust-src
         run: |
-          solana --version || echo "Solana not in path"
-          rustc --version || echo "Rustc not in path"
-          cargo --version || echo "Cargo not in path"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+          source ~/.cargo/env
+          rustup component add rust-src --toolchain nightly
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Build program
+      - name: Install Solana CLI and get SBF target
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          
+      - name: Show versions
+        run: |
+          rustc --version
+          cargo --version
+          solana --version
+
+      - name: Build program with nightly and build-std
         run: |
           rm -f Cargo.lock
-          cargo build-sbf || cargo build-bpf
+          cd program
+          cargo +nightly build \
+            --release \
+            --target sbf-solana-solana \
+            -Z build-std=std,panic_abort \
+            -Z build-std-features=panic_immediate_abort
+        env:
+          RUSTFLAGS: "-C target-cpu=sbfv2"
 
-      - name: Find built artifacts
-        run: find . -name "*.so" -type f 2>/dev/null || echo "No .so files"
+      - name: Find and copy artifacts
+        run: |
+          find . -name "*.so" -type f
+          mkdir -p artifacts
+          find . -name "*.so" -type f -exec cp {} artifacts/ \; || true
+          ls -la artifacts/
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
         with:
           name: speedway-program
-          path: |
-            target/deploy/*.so
-            target/sbf-solana-solana/release/*.so
+          path: artifacts/*.so
           if-no-files-found: warn
           retention-days: 30
