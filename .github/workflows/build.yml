@@ -10,34 +10,33 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ellipsislabs/solana:latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.82.0
-
-      - name: Install Solana CLI
+      - name: Check toolchain versions
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          solana --version || echo "Solana not in path"
+          rustc --version || echo "Rustc not in path"
+          cargo --version || echo "Cargo not in path"
 
-      - name: Build program only
+      - name: Build program
         run: |
           rm -f Cargo.lock
-          cd program
-          cargo build-sbf
+          cargo build-sbf || cargo build-bpf
+
+      - name: Find built artifacts
+        run: find . -name "*.so" -type f 2>/dev/null || echo "No .so files"
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
         with:
           name: speedway-program
-          path: program/target/deploy/*.so
+          path: |
+            target/deploy/*.so
+            target/sbf-solana-solana/release/*.so
           if-no-files-found: warn
           retention-days: 30
-          
-      - name: List built files
-        run: find . -name "*.so" -type f 2>/dev/null || echo "No .so files found"
