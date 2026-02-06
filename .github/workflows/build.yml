@@ -1,0 +1,59 @@
+name: Build Solana Program
+
+on:
+  push:
+    branches: [feature/3.3, main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  SOLANA_VERSION: 1.18.26
+  RUST_VERSION: 1.82.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: rustfmt, clippy
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Verify installations
+        run: |
+          solana --version
+          rustc --version
+          cargo --version
+
+      - name: Build program
+        run: cargo build-sbf
+
+      - name: Upload program artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedway-program
+          path: target/deploy/*.so
+          retention-days: 30
