@@ -15,47 +15,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust nightly with rust-src
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
-          source ~/.cargo/env
-          rustup component add rust-src --toolchain nightly
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Rust 1.79 (Solana 1.18 era)
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.79.0
 
-      - name: Install Solana CLI and get SBF target
+      - name: Install Solana CLI 1.18.26
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.26/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          
+
       - name: Show versions
         run: |
           rustc --version
           cargo --version
           solana --version
 
-      - name: Build program with nightly and build-std
+      - name: Build program
         run: |
           rm -f Cargo.lock
-          cd program
-          cargo +nightly build \
-            --release \
-            --target sbf-solana-solana \
-            -Z build-std=std,panic_abort \
-            -Z build-std-features=panic_immediate_abort
-        env:
-          RUSTFLAGS: "-C target-cpu=sbfv2"
-
-      - name: Find and copy artifacts
-        run: |
-          find . -name "*.so" -type f
-          mkdir -p artifacts
-          find . -name "*.so" -type f -exec cp {} artifacts/ \; || true
-          ls -la artifacts/
+          cargo build-sbf
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
         with:
           name: speedway-program
-          path: artifacts/*.so
+          path: target/deploy/*.so
           if-no-files-found: warn
           retention-days: 30
