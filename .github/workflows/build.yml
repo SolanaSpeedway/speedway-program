@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  SOLANA_VERSION: 1.18.26
-  RUST_VERSION: 1.82.0
+  SOLANA_VERSION: 2.1.15
+  RUST_VERSION: 1.85.0
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.82.0
+          toolchain: 1.85.0
 
       - name: Cache Cargo
         uses: actions/cache@v4
@@ -48,7 +48,9 @@ jobs:
           cargo --version
 
       - name: Build program
-        run: cargo build-sbf
+        run: |
+          rm -f Cargo.lock
+          cargo build-sbf
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
