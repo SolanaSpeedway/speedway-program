@@ -32,9 +32,7 @@ jobs:
           solana --version
 
       - name: Build program
-        run: |
-          rm -f Cargo.lock
-          cargo build-sbf
+        run: cargo build-sbf
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
