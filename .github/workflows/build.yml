@@ -18,22 +18,24 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.85.0
+          toolchain: nightly-2025-12-01
 
-      - name: Install Solana CLI (v2.3)
+      - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.0/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Clear platform-tools cache and force fresh download
+      - name: Override platform-tools Cargo with system Cargo
         run: |
-          rm -rf ~/.cache/solana
-          solana --version
+          SOLANA_TOOLS_DIR="$HOME/.local/share/solana/install/active_release/bin/sdk/sbf/dependencies/platform-tools/rust/bin"
+          mkdir -p "$SOLANA_TOOLS_DIR"
+          ln -sf $(which cargo) "$SOLANA_TOOLS_DIR/cargo"
+          ln -sf $(which rustc) "$SOLANA_TOOLS_DIR/rustc"
 
-      - name: Build program with fresh tools
+      - name: Build program
         run: |
           rm -f Cargo.lock
-          cargo build-sbf --force-tools-install
+          cargo build-sbf
 
       - name: Upload program artifact
         uses: actions/upload-artifact@v4
