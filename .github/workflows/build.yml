@@ -15,14 +15,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust 1.79 (Solana 1.18 era)
+      - name: Install Rust 1.82
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.79.0
+          toolchain: 1.82.0
 
-      - name: Install Solana CLI 1.18.26
+      - name: Install Solana CLI 2.1.15
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.26/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.1.15/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
       - name: Show versions
