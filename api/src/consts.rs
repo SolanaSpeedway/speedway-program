@@ -2,7 +2,7 @@ use solana_program::{pubkey, pubkey::Pubkey};
 
 /// The authority allowed to initialize the program.
 /// TODO: Set this to the Speedway admin address before mainnet deployment
-pub const ADMIN_ADDRESS: Pubkey = pubkey!("HBUh9g46wk2X89CvaNN15UmsznP59rh6od1h8JwYAopk");
+pub const ADMIN_ADDRESS: Pubkey = pubkey!("4mDJyuFSzhKrnhNAUtrsGhgekuLubvPXBLm5AziGnwUs");
 
 /// The decimal precision of the FUEL token.
 /// There are 100 billion indivisible units per FUEL (called "drops").
