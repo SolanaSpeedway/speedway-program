@@ -3,7 +3,7 @@ use spl_associated_token_account::get_associated_token_address;
 use steel::*;
 
 use crate::{
-    consts::{BOARD, MINT_ADDRESS, SOL_MINT},
+    consts::{BOARD, CONFIG, MINT_ADDRESS, ROUND, SOL_MINT, TREASURY},
     instruction::*,
     state::*,
 };
@@ -510,5 +510,37 @@ pub fn new_var(
             samples: samples.to_le_bytes(),
         }
         .to_bytes(),
+    }
+}
+
+// ============================================================================
+// Initialize Instruction
+// ============================================================================
+
+/// Creates the Initialize instruction to set up all required program PDAs.
+/// Only callable once by the ADMIN_ADDRESS.
+///
+/// Creates:
+/// - Treasury PDA (program's global token authority)
+/// - Config PDA (stores admin and program settings)
+/// - Board PDA (game state - current round, slots, etc.)
+/// - Round 0 PDA (first game round)
+pub fn initialize(signer: Pubkey) -> Instruction {
+    let treasury_address = treasury_pda().0;
+    let config_address = config_pda().0;
+    let board_address = board_pda().0;
+    let round_address = round_pda(0).0;
+
+    Instruction {
+        program_id: crate::ID,
+        accounts: vec![
+            AccountMeta::new(signer, true),
+            AccountMeta::new(treasury_address, false),
+            AccountMeta::new(config_address, false),
+            AccountMeta::new(board_address, false),
+            AccountMeta::new(round_address, false),
+            AccountMeta::new_readonly(system_program::ID, false),
+        ],
+        data: Initialize {}.to_bytes(),
     }
 }

@@ -34,6 +34,7 @@ pub enum OreInstruction {
     SetAdmin = 15,
     NewVar = 19,
     Liq = 25,
+    Initialize = 100,
 }
 
 #[repr(C)]
@@ -225,6 +226,17 @@ pub struct Stash {}
 #[derive(Clone, Copy, Debug, Pod, Zeroable)]
 pub struct ClaimWallet {}
 
+// ============================================================================
+// Admin Instructions
+// ============================================================================
+
+/// Initialize: Create all required program PDAs.
+/// Only callable by ADMIN_ADDRESS. Must be called once before program use.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct Initialize {}
+
+instruction!(OreInstruction, Initialize);
 instruction!(OreInstruction, Automate);
 instruction!(OreInstruction, Close);
 instruction!(OreInstruction, Checkpoint);

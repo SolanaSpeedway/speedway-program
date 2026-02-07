@@ -118,8 +118,37 @@ async fn main() {
         "automation" => {
             log_automation(&rpc).await.unwrap();
         }
+        "initialize" => {
+            initialize(&rpc, &payer).await.unwrap();
+        }
         _ => panic!("Invalid command"),
     };
+}
+
+async fn initialize(
+    rpc: &RpcClient,
+    payer: &solana_sdk::signer::keypair::Keypair,
+) -> Result<(), anyhow::Error> {
+    println!("Initializing Speedway program...");
+    println!("Admin: {}", payer.pubkey());
+
+    let treasury_address = speedway_api::state::treasury_pda().0;
+    let config_address = speedway_api::state::config_pda().0;
+    let board_address = speedway_api::state::board_pda().0;
+    let round_address = speedway_api::state::round_pda(0).0;
+
+    println!("Treasury PDA: {}", treasury_address);
+    println!("Config PDA: {}", config_address);
+    println!("Board PDA: {}", board_address);
+    println!("Round 0 PDA: {}", round_address);
+
+    let ix = speedway_api::sdk::initialize(payer.pubkey());
+    let sig = submit_transaction(rpc, payer, &[ix]).await?;
+
+    println!("Initialization successful!");
+    println!("Transaction: {}", sig);
+
+    Ok(())
 }
 
 async fn liq(

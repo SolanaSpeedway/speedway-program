@@ -10,6 +10,7 @@ mod close;
 // mod compound_yield;
 mod deploy;
 // mod deposit;
+mod initialize;
 mod liq;
 mod log;
 mod new_var;
@@ -38,6 +39,7 @@ use close::*;
 // use compound_yield::*;
 use deploy::*;
 // use deposit::*;
+use initialize::*;
 use liq::*;
 use log::*;
 use new_var::*;
@@ -97,6 +99,7 @@ pub fn process_instruction(
         OreInstruction::SetAdmin => process_set_admin(accounts, data)?,
         OreInstruction::NewVar => process_new_var(accounts, data)?,
         OreInstruction::Liq => process_liq(accounts, data)?,
+        OreInstruction::Initialize => process_initialize(accounts, data)?,
     }
 
     Ok(())
