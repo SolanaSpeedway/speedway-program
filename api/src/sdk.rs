@@ -540,6 +540,7 @@ pub fn initialize(signer: Pubkey) -> Instruction {
             AccountMeta::new(board_address, false),
             AccountMeta::new(round_address, false),
             AccountMeta::new_readonly(system_program::ID, false),
+            AccountMeta::new_readonly(crate::ID, false),
         ],
         data: Initialize {}.to_bytes(),
     }

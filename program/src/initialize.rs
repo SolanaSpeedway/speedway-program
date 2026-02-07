@@ -17,9 +17,10 @@ use steel::*;
 /// 3. `[writable]` Board PDA
 /// 4. `[writable]` Round 0 PDA
 /// 5. `[]` System program
-pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResult {
+/// 6. `[]` Speedway program (self)
+pub fn process_initialize(accounts: &[AccountInfo<'_>], _data: &[u8]) -> ProgramResult {
     // Parse accounts
-    let [signer_info, treasury_info, config_info, board_info, round_info, system_program] =
+    let [signer_info, treasury_info, config_info, board_info, round_info, system_program, ore_program] =
         accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -31,25 +32,26 @@ pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResu
         return Err(OreError::NotAuthorized.into());
     }
 
-    // Validate system program
+    // Validate programs
     system_program.is_program(&system_program::ID)?;
+    ore_program.is_program(&speedway_api::ID)?;
 
     // Get clock for current slot
     let clock = Clock::get()?;
     let current_slot = clock.slot;
 
     // Create Treasury PDA
-    let treasury_bump = treasury_info
+    treasury_info
         .is_empty()?
         .is_writable()?
         .has_seeds(&[TREASURY], &speedway_api::ID)?;
 
-    create_account::<Treasury>(
+    create_program_account::<Treasury>(
         treasury_info,
-        system_program,
+        ore_program,
         signer_info,
         &speedway_api::ID,
-        &[TREASURY, &[treasury_bump]],
+        &[TREASURY],
     )?;
 
     let treasury = treasury_info.as_account_mut::<Treasury>(&speedway_api::ID)?;
@@ -66,17 +68,17 @@ pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResu
     treasury.total_garage_tvl = 0;
 
     // Create Config PDA
-    let config_bump = config_info
+    config_info
         .is_empty()?
         .is_writable()?
         .has_seeds(&[CONFIG], &speedway_api::ID)?;
 
-    create_account::<Config>(
+    create_program_account::<Config>(
         config_info,
-        system_program,
+        ore_program,
         signer_info,
         &speedway_api::ID,
-        &[CONFIG, &[config_bump]],
+        &[CONFIG],
     )?;
 
     let config = config_info.as_account_mut::<Config>(&speedway_api::ID)?;
@@ -88,17 +90,17 @@ pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResu
     config.buffer_e = [0u8; 8];
 
     // Create Board PDA
-    let board_bump = board_info
+    board_info
         .is_empty()?
         .is_writable()?
         .has_seeds(&[BOARD], &speedway_api::ID)?;
 
-    create_account::<Board>(
+    create_program_account::<Board>(
         board_info,
-        system_program,
+        ore_program,
         signer_info,
         &speedway_api::ID,
-        &[BOARD, &[board_bump]],
+        &[BOARD],
     )?;
 
     let board = board_info.as_account_mut::<Board>(&speedway_api::ID)?;
@@ -109,17 +111,17 @@ pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResu
 
     // Create Round 0 PDA
     let round_id: u64 = 0;
-    let round_bump = round_info
+    round_info
         .is_empty()?
         .is_writable()?
         .has_seeds(&[ROUND, &round_id.to_le_bytes()], &speedway_api::ID)?;
 
-    create_account::<Round>(
+    create_program_account::<Round>(
         round_info,
-        system_program,
+        ore_program,
         signer_info,
         &speedway_api::ID,
-        &[ROUND, &round_id.to_le_bytes(), &[round_bump]],
+        &[ROUND, &round_id.to_le_bytes()],
     )?;
 
     let round = round_info.as_account_mut::<Round>(&speedway_api::ID)?;
@@ -127,7 +129,7 @@ pub fn process_initialize(accounts: &[AccountInfo], _data: &[u8]) -> ProgramResu
     round.deployed = [0u64; 25];
     round.slot_hash = [0u8; 32];
     round.count = [0u64; 25];
-    round.expires_at = 0;
+    round.expires_at = u64::MAX;
     round.motherlode = 0;
     round.rent_payer = *signer_info.key;
     round.top_miner = Pubkey::default();
