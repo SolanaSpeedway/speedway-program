@@ -1,9 +1,4 @@
-use speedway_api::{
-    consts::{ADMIN_ADDRESS, BOARD, CONFIG, ONE_MINUTE_SLOTS, ROUND, TREASURY},
-    error::OreError,
-    instruction::Initialize,
-    state::{Board, Config, OreAccount, Round, Treasury},
-};
+use speedway_api::prelude::*;
 use solana_program::clock::Clock;
 use steel::*;
 
