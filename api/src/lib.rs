@@ -16,7 +16,7 @@ pub mod prelude {
 
 use steel::*;
 
-declare_id!("oreV3EG1i9BEgiAJ8b177Z2S2rMarzak4NMv1kULvWv");
+declare_id!("9gKS98fsEpt6nqRy78SEUppvwQ158QxU5VM4nK2JrGCM");
 
 // ============================================================================
 // Integration Tests for Garage Instructions
